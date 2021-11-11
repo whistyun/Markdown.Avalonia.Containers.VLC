@@ -1,0 +1,48 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:Markdown.Avalonia.Containers.VLC.Demo.ViewModels"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:md="clr-namespace:Markdown.Avalonia;assembly=Markdown.Avalonia"
+        xmlns:vlc="clr-namespace:Markdown.Avalonia.Containers.VLC;assembly=Markdown.Avalonia.Containers.VLC"
+        mc:Ignorable="d" d:DesignWidth="400" d:DesignHeight="500"
+        Width="400" Height="500"
+        x:Class="Markdown.Avalonia.Containers.VLC.Demo.Views.MainWindow"
+        Icon="/Assets/avalonia-logo.ico"
+        Title="Markdown.Avalonia.Containers.VLC.Demo">
+
+  <Design.DataContext>
+    <vm:MainWindowViewModel/>
+  </Design.DataContext>
+
+  <Grid>
+    <Grid.ColumnDefinitions>
+      <ColumnDefinition Width="10*"/>
+    </Grid.ColumnDefinitions>
+    <Grid.RowDefinitions>
+      <RowDefinition Height="10*"/>
+      <RowDefinition Height="40*"/>
+    </Grid.RowDefinitions>
+
+    <TextBox
+        Grid.Row="0" Grid.Column="0"
+        Text="{Binding Text}"
+        AcceptsReturn="True"/>
+
+    <md:MarkdownScrollViewer
+        Grid.Row="1" Grid.Column="0"
+        Markdown="{Binding Text}"
+      >
+      <md:MarkdownScrollViewer.Engine>
+        <md:Markdown>
+          <md:Markdown.ContainerBlockHandler>
+            <md:ContainerSwitch>
+              <vlc:VideoContainerBlockHandler x:Key="movie"/>
+            </md:ContainerSwitch>
+          </md:Markdown.ContainerBlockHandler>
+        </md:Markdown>
+      </md:MarkdownScrollViewer.Engine>
+    </md:MarkdownScrollViewer>
+  </Grid>
+
+</Window>

@@ -1,0 +1,62 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vlc="clr-namespace:LibVLCSharp.Avalonia;assembly=LibVLCSharp.Avalonia"
+             mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+             x:Class="Markdown.Avalonia.Containers.VLC.SimpleVideoPlayer">
+  <DockPanel LastChildFill="True">
+    <DockPanel DockPanel.Dock="Bottom">
+      <StackPanel DockPanel.Dock="Left" Orientation="Horizontal">
+        <Button x:Name="PlayButton">
+          <Canvas Width="20" Height="20" x:Name="C1">
+            <Polygon Points="20,10 0,20 0,0" Fill="Black"/>
+          </Canvas>
+        </Button>
+        <Button x:Name="ResumeButton" IsVisible="False">
+          <Canvas Width="20" Height="20" x:Name="C2">
+            <Polygon Points="20,10 0,20 0,0" Fill="Black"/>
+          </Canvas>
+        </Button>
+        <Button x:Name="PauseButton" IsVisible="False">
+          <Canvas Width="20" Height="20" x:Name="C3">
+            <Rectangle Width="7" Height="20" Fill="Black" Canvas.Left="1"/>
+            <Rectangle Width="7" Height="20" Fill="Black" Canvas.Left="12"/>
+          </Canvas>
+        </Button>
+        <Button x:Name="StopButton" IsVisible="False">
+          <Canvas Width="20" Height="20" x:Name="C4">
+            <Rectangle Width="20" Height="20" Fill="Black"/>
+          </Canvas>
+        </Button>
+      </StackPanel>
+
+      <StackPanel DockPanel.Dock="Right" VerticalAlignment="Center" HorizontalAlignment="Right" Orientation="Horizontal">
+        <Button x:Name="MuteButton">
+          <Canvas Width="20" Height="20" x:Name="C5">
+            <Rectangle Width="5" Height="10" Canvas.Top="5" Fill="Black"/>
+            <Polygon Points="7,4 18,0 18,20 7,16" Fill="Black"/>
+          </Canvas>
+        </Button>
+        <Button x:Name="LoudButton"  IsVisible="False">
+          <Canvas Width="20" Height="20" x:Name="C6">
+            <Rectangle Width="5" Height="10" Fill="Black" Canvas.Top="5"/>
+            <Polygon Points="14,10 18,7 18,13" Fill="Black"/>
+
+            <Polygon Points="8,4 15,0 10,6" Fill="Black"/>
+
+            <Polygon Points="8,16 15,20 10,14" Fill="Black"/>
+
+
+            <Polygon Points="18,0 20,2 2,20 0,18" Fill="Black"/>
+            <Polygon Points="2,0 20,18 18,20 0,2" Fill="Black"/>
+          </Canvas>
+        </Button>
+      </StackPanel>
+    </DockPanel>
+
+    <Border x:Name="View" Background="Black">
+      <vlc:VideoView x:Name="VideoView" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"/>
+    </Border>
+  </DockPanel>
+</UserControl>
