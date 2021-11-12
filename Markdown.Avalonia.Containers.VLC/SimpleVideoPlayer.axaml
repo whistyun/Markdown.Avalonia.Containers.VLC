@@ -6,7 +6,7 @@
              mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
              x:Class="Markdown.Avalonia.Containers.VLC.SimpleVideoPlayer">
   <DockPanel LastChildFill="True">
-    <DockPanel DockPanel.Dock="Bottom">
+    <DockPanel DockPanel.Dock="Bottom" LastChildFill="True">
       <StackPanel DockPanel.Dock="Left" Orientation="Horizontal">
         <Button x:Name="PlayButton">
           <Canvas Width="20" Height="20" x:Name="C1">
@@ -29,6 +29,10 @@
             <Rectangle Width="20" Height="20" Fill="Black"/>
           </Canvas>
         </Button>
+        <StackPanel Orientation="Vertical" VerticalAlignment="Center">
+          <TextBlock x:Name="NowTime" FontSize="10">--:--</TextBlock>
+          <TextBlock x:Name="EntireTime" FontSize="10">--:--</TextBlock>
+        </StackPanel>
       </StackPanel>
 
       <StackPanel DockPanel.Dock="Right" VerticalAlignment="Center" HorizontalAlignment="Right" Orientation="Horizontal">
@@ -47,16 +51,19 @@
 
             <Polygon Points="8,16 15,20 10,14" Fill="Black"/>
 
-
             <Polygon Points="18,0 20,2 2,20 0,18" Fill="Black"/>
             <Polygon Points="2,0 20,18 18,20 0,2" Fill="Black"/>
           </Canvas>
         </Button>
       </StackPanel>
+
+      <ScrollBar x:Name="SeekBar"
+                 IsEnabled="False"
+                 Minimum="0" Maximum="1"
+                 HorizontalAlignment="Stretch" Orientation="Horizontal" />
     </DockPanel>
 
     <Border x:Name="View" Background="Black">
-      <vlc:VideoView x:Name="VideoView" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"/>
     </Border>
   </DockPanel>
 </UserControl>

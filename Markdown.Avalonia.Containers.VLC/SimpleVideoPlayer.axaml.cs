@@ -1,8 +1,10 @@
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Controls.Primitives;
 using Avalonia.Controls.Shapes;
 using Avalonia.Markup.Xaml;
 using Avalonia.Media;
+using Avalonia.Threading;
 using LibVLCSharp.Avalonia;
 using LibVLCSharp.Shared;
 using System;
@@ -22,11 +24,11 @@ namespace Markdown.Avalonia.Containers.VLC
                 .AddClassHandler<SimpleVideoPlayer>((x, _) => x.UpdateBounds());
         }
 
-        private const double Ratio = 16d / 9d;
+        private double _Ratio = 16d / 9d;
         private bool _ShoudSetHeight = true;
         private int _measuredWidth;
         private int _calcatedHeight;
-
+        private double _seekbarValue;
 
         private LibVLC _Libvlc;
         private MediaPlayer _MediaPlayer;
@@ -38,8 +40,14 @@ namespace Markdown.Avalonia.Containers.VLC
         private Button _MuteButton;
         private Button _LoudButton;
 
+        private TextBlock _NowTime;
+        private TextBlock _EntireTime;
+
+        private Border _View;
         private VideoView _VideoView;
         private Canvas[] _Canvases;
+
+        private ScrollBar _SeekBar;
 
         private VideoParameter _Parameter;
         internal VideoParameter Parameter
@@ -67,9 +75,18 @@ namespace Markdown.Avalonia.Containers.VLC
             _StopButton.Click += (s, e) => Stop();
             _MuteButton.Click += (s, e) => Mute();
             _LoudButton.Click += (s, e) => Unmute();
+
+
+            var value = _SeekBar.GetObservable(ScrollBar.ValueProperty);
+            value.Subscribe(_SeekBar_ValueChanged);
         }
 
-        public void Play()
+        ~SimpleVideoPlayer()
+        {
+            Dispose();
+        }
+
+        private void Play()
         {
             if (Parameter.Source is null) return;
 
@@ -78,14 +95,67 @@ namespace Markdown.Avalonia.Containers.VLC
             _PauseButton.IsVisible = true;
             _StopButton.IsVisible = true;
 
+            _View.Child = _VideoView;
             _VideoView.MediaPlayer = _MediaPlayer = new MediaPlayer(_Libvlc);
             using var media = new Media(_Libvlc, Parameter.Source);
 
             _MediaPlayer.Mute = _IsMute;
+            _MediaPlayer.Playing += (s, e) => Dispatcher.UIThread.InvokeAsync(() => _MediaPlayer_Playing());
+            _MediaPlayer.EndReached += (s, e) => Dispatcher.UIThread.InvokeAsync(() => Stop());
+            _MediaPlayer.PositionChanged += (s, e) => Dispatcher.UIThread.InvokeAsync(() => _MediaPlayer_PositionChanged());
             _MediaPlayer.Play(media);
         }
 
-        public void Resume()
+        private void _MediaPlayer_Playing()
+        {
+            Dispatcher.UIThread.InvokeAsync(() =>
+            {
+                _SeekBar.IsEnabled = _MediaPlayer.IsSeekable;
+
+                var length = _MediaPlayer.Length;
+                if (length != -1)
+                {
+                    _SeekBar.SmallChange = 5000d / length;
+                    _SeekBar.LargeChange = 10000d / length;
+
+                    var sec = length / 1000 % 60;
+                    var min = length / 1000 / 60 % 60;
+                    var hour = length / 1000 / 60 / 60;
+                    _EntireTime.Text = hour == 0 ?
+                            String.Format("{0:D2}:{1:D2}", min, sec) :
+                            String.Format("{0}:{1:D2}:{2:D2}", hour, min, sec);
+                }
+            });
+        }
+
+        private void _MediaPlayer_PositionChanged()
+        {
+            _SeekBar.Value = _seekbarValue = _MediaPlayer.Position;
+
+            var length = _MediaPlayer.Length;
+            if (length != -1)
+            {
+                var pos = (int)(_MediaPlayer.Position * length);
+                var sec = pos / 1000 % 60;
+                var min = pos / 1000 / 60 % 60;
+                var hour = pos / 1000 / 60 / 60;
+                _NowTime.Text = length < 60 * 60 * 1000 ?
+                        String.Format("{0:D2}:{1:D2}", min, sec) :
+                        String.Format("{0}:{1:D2}:{2:D2}", hour, min, sec);
+            }
+        }
+
+        private void _SeekBar_ValueChanged(double newValue)
+        {
+            if (_seekbarValue != newValue)
+            {
+                _seekbarValue = newValue;
+                if (_MediaPlayer != null)
+                    _MediaPlayer.Position = (float)newValue;
+            }
+        }
+
+        private void Resume()
         {
             _PlayButton.IsVisible = false;
             _ResumeButton.IsVisible = false;
@@ -95,7 +165,7 @@ namespace Markdown.Avalonia.Containers.VLC
             _MediaPlayer.Play();
         }
 
-        public void Pause()
+        private void Pause()
         {
             _PlayButton.IsVisible = false;
             _ResumeButton.IsVisible = true;
@@ -105,17 +175,21 @@ namespace Markdown.Avalonia.Containers.VLC
             _MediaPlayer.Pause();
         }
 
-        public void Stop()
+        private void Stop()
         {
             _PlayButton.IsVisible = true;
             _ResumeButton.IsVisible = false;
             _PauseButton.IsVisible = false;
             _StopButton.IsVisible = false;
-
-            _MediaPlayer.Stop();
+            _SeekBar.Value = _seekbarValue = 0;
+            _SeekBar.IsEnabled = false;
+            _MediaPlayer?.Stop();
+            _NowTime.Text = "--:--";
+            _EntireTime.Text = "--:--";
+            _View.Child = null;
         }
 
-        public void Mute()
+        private void Mute()
         {
             _MuteButton.IsVisible = false;
             _LoudButton.IsVisible = true;
@@ -124,7 +198,7 @@ namespace Markdown.Avalonia.Containers.VLC
             if (_MediaPlayer != null)
                 _MediaPlayer.Mute = true;
         }
-        public void Unmute()
+        private void Unmute()
         {
             _MuteButton.IsVisible = true;
             _LoudButton.IsVisible = false;
@@ -142,7 +216,8 @@ namespace Markdown.Avalonia.Containers.VLC
 
         private void UpdateParameter()
         {
-            _ShoudSetHeight = Double.IsNaN(_Parameter.Width) || Double.IsNaN(_Parameter.Height);
+            _ShoudSetHeight = Double.IsNaN(_Parameter.Height)
+                || (!Double.IsNaN(_Parameter.Width) && !Double.IsNaN(_Parameter.Height));
 
             if (!Double.IsNaN(_Parameter.Width))
             {
@@ -151,6 +226,11 @@ namespace Markdown.Avalonia.Containers.VLC
             if (!Double.IsNaN(_Parameter.Height))
             {
                 MaxHeight = _Parameter.Height;
+            }
+
+            if (!Double.IsNaN(_Parameter.Width) && !Double.IsNaN(_Parameter.Height))
+            {
+                _Ratio = _Parameter.Width / _Parameter.Height;
             }
         }
 
@@ -169,17 +249,23 @@ namespace Markdown.Avalonia.Containers.VLC
         {
             var width = Bounds.Width;
 
-            if (_ShoudSetHeight && _measuredWidth != (int)width)
+            if (_ShoudSetHeight)
             {
-                _measuredWidth = (int)width;
-
-                var newHeight = width / Ratio;
-                if (_calcatedHeight != (int)newHeight)
+                if (_measuredWidth != (int)width)
                 {
-                    _calcatedHeight = (int)newHeight;
-                    Height = newHeight;
+                    _measuredWidth = (int)width;
+
+                    var newHeight = width / _Ratio;
+                    if (_calcatedHeight != (int)newHeight)
+                    {
+                        _calcatedHeight = (int)newHeight;
+                        Height = newHeight;
+                    }
                 }
             }
+            else Height = MaxHeight;
+
+            InvalidateVisual();
         }
 
         private void InitializeComponent()
@@ -192,11 +278,23 @@ namespace Markdown.Avalonia.Containers.VLC
             _StopButton = this.FindControl<Button>("StopButton");
             _MuteButton = this.FindControl<Button>("MuteButton");
             _LoudButton = this.FindControl<Button>("LoudButton");
-            _VideoView = this.FindControl<VideoView>("VideoView");
+
+            _View = this.FindControl<Border>("View");
+            _VideoView = new VideoView();// this.FindControl<VideoView>("VideoView");
+            _SeekBar = this.FindControl<ScrollBar>("SeekBar");
+
+            _NowTime = this.FindControl<TextBlock>("NowTime");
+            _EntireTime = this.FindControl<TextBlock>("EntireTime");
 
             _Canvases = Enumerable.Range(1, 6)
                                   .Select(idx => this.FindControl<Canvas>("C" + idx))
                                   .ToArray();
+        }
+
+        protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
+        {
+            base.OnDetachedFromVisualTree(e);
+            Stop();
         }
 
     }

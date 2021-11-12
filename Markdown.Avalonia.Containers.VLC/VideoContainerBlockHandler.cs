@@ -50,14 +50,6 @@ namespace Markdown.Avalonia.Containers.VLC
             }
             else
             {
-                //var videoView = new VideoView()
-                //{
-                //    HorizontalAlignment = HorizontalAlignment.Stretch,
-                //    VerticalAlignment = VerticalAlignment.Stretch,
-                //};
-                //
-                //var border = new B(libvlc, videoView, new Uri(lines.Trim()));
-
                 var svplayer = new SimpleVideoPlayer();
                 svplayer.Parameter = ParseParameter(assetPathRoot, lines);
 
@@ -82,7 +74,7 @@ namespace Markdown.Avalonia.Containers.VLC
                     parameter.Width = Double.TryParse(paramObj["Width"].ToString(), out var width) ? width : Double.NaN;
 
                 if (paramObj.ContainsKey("Height"))
-                    parameter.Width = Double.TryParse(paramObj["Height"].ToString(), out var height) ? height : Double.NaN;
+                    parameter.Height = Double.TryParse(paramObj["Height"].ToString(), out var height) ? height : Double.NaN;
             }
             catch
             {
@@ -111,37 +103,6 @@ namespace Markdown.Avalonia.Containers.VLC
             }
 
             return null;
-        }
-
-
-        class B : Border
-        {
-            private bool isFirst = true;
-            private LibVLC libvlc;
-            private VideoView video;
-            private Uri mediauri;
-
-            public B(LibVLC libvlc, VideoView video, Uri uri)
-            {
-                this.libvlc = libvlc;
-                this.video = video;
-                this.mediauri = uri;
-            }
-
-            public override void Render(DrawingContext context)
-            {
-                base.Render(context);
-                if (isFirst)
-                {
-                    isFirst = false;
-                    video.MediaPlayer = new MediaPlayer(libvlc);
-                    using (var media = new Media(libvlc, mediauri))
-                    {
-                        video.MediaPlayer.Play(media);
-                        video.MediaPlayer.Pause();
-                    }
-                }
-            }
         }
     }
 }
