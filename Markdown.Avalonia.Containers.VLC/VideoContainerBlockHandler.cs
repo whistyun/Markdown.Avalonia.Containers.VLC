@@ -6,6 +6,9 @@ using LibVLCSharp.Shared;
 using Markdown.Avalonia.Utils;
 using Newtonsoft.Json.Linq;
 using System;
+using System.Diagnostics;
+using System.Linq;
+using System.Reflection;
 
 namespace Markdown.Avalonia.Containers.VLC
 {
@@ -28,6 +31,21 @@ namespace Markdown.Avalonia.Containers.VLC
                 InitErrorMessage = String.Format("{0}: {1}", e.GetType().Name, e.Message);
             }
         }
+
+        private string[] AssetAssemblyNames;
+
+        public VideoContainerBlockHandler()
+        {
+            var stack = new StackTrace();
+            this.AssetAssemblyNames = stack.GetFrames()
+                            .Select(frm => frm.GetMethod().DeclaringType.Assembly)
+                            .Where(asm => !asm.GetName().Name.Equals("Markdown.Avalonia"))
+                            .Where(asm => !asm.GetName().Name.Equals("Markdown.Avalonia.Containers.VLC"))
+                            .Select(asm => asm.GetName().Name)
+                            .Distinct()
+                            .ToArray();
+        }
+
 
         public Border ProvideControl(string assetPathRoot, string blockName, string lines)
         {
@@ -61,7 +79,7 @@ namespace Markdown.Avalonia.Containers.VLC
 
         private VideoParameter ParseParameter(string assetPathRoot, string lines)
         {
-            var parameter = new VideoParameter();
+            var parameter = new VideoParameter(assetPathRoot, AssetAssemblyNames);
             string urlTxt = null;
             try
             {
@@ -81,28 +99,10 @@ namespace Markdown.Avalonia.Containers.VLC
                 urlTxt = lines.Trim();
             }
 
-            parameter.Source = GetUrlFrom(assetPathRoot, urlTxt);
+            parameter.SourcePath = urlTxt;
 
             return parameter;
         }
 
-        private Uri GetUrlFrom(string assetPathRoot, string urlTxt)
-        {
-            if (urlTxt is null) return null;
-
-            // check network
-            if (Uri.TryCreate(urlTxt, UriKind.Absolute, out var url))
-            {
-                return url;
-            }
-
-            // check filesystem
-            if (assetPathRoot != null)
-            {
-                return new Uri(new Uri(assetPathRoot), urlTxt);
-            }
-
-            return null;
-        }
     }
 }

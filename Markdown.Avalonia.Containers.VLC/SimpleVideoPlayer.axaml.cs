@@ -5,10 +5,12 @@ using Avalonia.Controls.Shapes;
 using Avalonia.Markup.Xaml;
 using Avalonia.Media;
 using Avalonia.Threading;
+using Avalonia.Layout;
 using LibVLCSharp.Avalonia;
 using LibVLCSharp.Shared;
 using System;
 using System.Linq;
+using System.Net;
 using System.Reactive.Linq;
 
 namespace Markdown.Avalonia.Containers.VLC
@@ -88,22 +90,32 @@ namespace Markdown.Avalonia.Containers.VLC
 
         private void Play()
         {
-            if (Parameter.Source is null) return;
+            if (Parameter.TryOpenSource(_Libvlc, out var media, out var errMsg))
+            {
+                _PlayButton.IsVisible = false;
+                _ResumeButton.IsVisible = false;
+                _PauseButton.IsVisible = true;
+                _StopButton.IsVisible = true;
 
-            _PlayButton.IsVisible = false;
-            _ResumeButton.IsVisible = false;
-            _PauseButton.IsVisible = true;
-            _StopButton.IsVisible = true;
-
-            _View.Child = _VideoView;
-            _VideoView.MediaPlayer = _MediaPlayer = new MediaPlayer(_Libvlc);
-            using var media = new Media(_Libvlc, Parameter.Source);
-
-            _MediaPlayer.Mute = _IsMute;
-            _MediaPlayer.Playing += (s, e) => Dispatcher.UIThread.InvokeAsync(() => _MediaPlayer_Playing());
-            _MediaPlayer.EndReached += (s, e) => Dispatcher.UIThread.InvokeAsync(() => Stop());
-            _MediaPlayer.PositionChanged += (s, e) => Dispatcher.UIThread.InvokeAsync(() => _MediaPlayer_PositionChanged());
-            _MediaPlayer.Play(media);
+                _View.Child = _VideoView;
+                _VideoView.MediaPlayer = _MediaPlayer = new MediaPlayer(_Libvlc);
+                _MediaPlayer.Mute = _IsMute;
+                _MediaPlayer.Playing += (s, e) => Dispatcher.UIThread.InvokeAsync(() => _MediaPlayer_Playing());
+                _MediaPlayer.EndReached += (s, e) => Dispatcher.UIThread.InvokeAsync(() => Stop());
+                _MediaPlayer.PositionChanged += (s, e) => Dispatcher.UIThread.InvokeAsync(() => _MediaPlayer_PositionChanged());
+                _MediaPlayer.Play(media);
+            }
+            else
+            {
+                _View.Child = new TextBlock()
+                {
+                    TextWrapping = TextWrapping.WrapWithOverflow,
+                    Text = errMsg,
+                    Foreground = new SolidColorBrush(Colors.Red),
+                    HorizontalAlignment = HorizontalAlignment.Center,
+                    VerticalAlignment = VerticalAlignment.Center,
+                };
+            }
         }
 
         private void _MediaPlayer_Playing()
