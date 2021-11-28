@@ -38,10 +38,10 @@ namespace Markdown.Avalonia.Containers.VLC
         {
             var stack = new StackTrace();
             this.AssetAssemblyNames = stack.GetFrames()
-                            .Select(frm => frm.GetMethod().DeclaringType.Assembly)
-                            .Where(asm => !asm.GetName().Name.Equals("Markdown.Avalonia"))
-                            .Where(asm => !asm.GetName().Name.Equals("Markdown.Avalonia.Containers.VLC"))
-                            .Select(asm => asm.GetName().Name)
+                            .Select(frm => frm.GetMethod().DeclaringType?.Assembly?.GetName()?.Name)
+                            .OfType<string>()
+                            .Where(name => !name.Equals("Markdown.Avalonia"))
+                            .Where(name => !name.Equals("Markdown.Avalonia.Containers.VLC"))
                             .Distinct()
                             .ToArray();
         }
